@@ -1,0 +1,163 @@
+---
+title: "Sample R Markdown Template"
+size: 8
+geometry: margin=1cm
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+---
+  
+A sample R Markdown document to use as a quick intro to R Markdown and as a starting template.
+In R code normally the '#' symbol denotes a comment in the code. In an R markdown document the "#'
+indicates a header of different sizes.
+```{r}
+#for output with lots of columns
+options(width = 300)
+
+```
+
+
+```{r pressure, echo=FALSE, fig.cap="A caption", out.width = '100%'}
+# ![Caption for the picture.](/path/to/image.png)
+# OR  
+# ![Caption for the picture.](/path/to/image.png){#id .class width=30 height=20px}
+#knitr::include_graphics("temp.png")
+```
+
+# Header 1
+
+## Header 2
+
+### Header 3
+
+# A Brief Intro to R Markdown
+
+## Newlines
+Newlines require a double space after the end of a line.  
+  
+First line
+Second line  
+
+First line  
+Second line  
+
+##Bold and italics  
+ It is easy to use **bold** and *italic* text
+
+## Lists  
+
+Unordered List:  
+
+* Item 1
+* Item 2
+    * Item 2a
+    * Item 2b
+    
+Ordered List:
+
+1. Item 1
+2. Item 2
+3. Item 3
+    3.1. Item 3a
+    3.2. Item 3b
+
+    
+## R Code Chunks  
+
+Summary of cars dataset's dist and speed variables
+```{r}
+summary(cars$dist)
+summary(cars$speed)
+```
+
+Using results="hide" in the r code chunk prints the code and hides the results.
+Could also use eval=FALSE to display but to evaluate code
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+#hide warnings from library warnings
+```
+```{r, results="hide"}
+summary(cars$dist)
+summary(cars$speed)
+```
+
+Using echo=FALSE in the r code chunk hides the code and prints the results
+```{r, echo=FALSE}
+summary(cars$dist)
+summary(cars$speed)
+```
+
+### Including graphics (3rd level header not included in ToC)
+
+Let's first simulate some data.
+```{r simulatedata}
+x <- rnorm(100); y <- x + rnorm(100, sd = 0.5)
+```
+
+Here is a scatterplot of the data.
+```{r scatterplot, fig.width=6, fig.height=4}
+par(mar = c(5,4,1,1), las = 1)
+plot(x,y, main = "My Simulated Data")
+```
+
+##Extras
+inline equation: $A = \pi*r^{2}$  
+
+> block quote  
+> block quote
+
+
+superscript^2^
+  
+$\sqrt{(1.763--0.214)^2 + (1.37--0.36)^2 + (-1.97-0.03)^2)}$  
+$\sqrt{(1.977)^2 + (1.73)^2 + (-2)^2 }$  
+$~=3.302$  
+$\approx3.302$  
+
+## Table
+
+Including tables in your presentation
+
+### Basic Tables
+You can create tables using 
+
+
+First Header  | Second Header  
+------------- | -------------  
+Content Cell  | Content Cell  
+Content Cell  | Content Cell  
+  
+a | a | a
+--|---|---
+a | a | a
+a | a | a
+  
+Region 1     Region 2       Hotelling's p-value  Significant (Y/N)    Significant after correction (Y/N)  
+----------   -------------  -----------          ------------         -------------------  
+Africa       Asia           CONTENT              CONTENT              CONTENT  
+Africa       Europe         CONTENT              CONTENT              CONTENT  
+Africa       South.America  CONTENT              CONTENT              CONTENT 
+  
+\newpage
+
+### Advanced Table 
+
+```{r knitrtable, results='asis', echo=FALSE}
+knitr::kable(mtcars[1:10,])
+```
+
+## Links  
+
+[Markdown Basics](http://rmarkdown.rstudio.com/authoring_basics.html)  
+[R Markdown - Dynamic Documents for R](http://rmarkdown.rstudio.com/)  
+[R Code Chunks](http://rmarkdown.rstudio.com/authoring_rcodechunks.html)  
+[Document Templates](http://rmarkdown.rstudio.com/developer_document_templates.html)  
+[Knitr galleries of demos](http://yihui.name/knitr/demos/)  
+
+
+
+
+
+
