@@ -1,0 +1,472 @@
+---
+title: "STA8005 Assignment 2"
+author: David Ash - 0061137063
+date: May 2021
+geometry: margin=1cm
+output:
+  pdf_document:
+    toc: no
+  html_document:
+    toc: yes
+---
+
+```{r, echo=FALSE, results="hide"}
+rm(list = ls())
+ab <- read.table("abalone.txt", header=TRUE)
+head(ab)
+str(ab)
+```
+The age of abalone is determined by cutting the shell through the cone, staining it, and counting the number of rings through a microscope -- a boring and time-consuming task. Other measurements, which are easier to obtain, are used to predict the age.  
+  
+The data file ‘abalone.txt’ contains data from 2086 Tasmanian abalone and includes the following variables:
+* Sex: Male (M), Female (F) and Infant (I)
+* Rings: an integer determined from the staining process. Value +1.5 gives the age in years. eg. rings 4 + 1.5 = 5.5years
+
+Size variables: cols 2-4
+
+* Length: Longest shell measurement (mm)
+* Diameter: perpendicular to length (mm)
+* Height: with meat in shell (mm)
+
+Weight variables: cols 5-8
+
+* Whole: whole abalone weight (grams)
+* Shucked: weight of meat (grams)
+* Viscera: gut weight after bleeding (grams)
+* Shell: weight after being dried (grams)
+
+## Question 1 (30 marks): Provide R code, output and written interpretation for parts (a) to (d) of this question. Provide only output that is directly relevant to address each question – this requires you to select the appropriate parts of the output from your analysis to address each dot-point.
+## &nbsp;&nbsp;(a) Based on standardised variables produce and comment on 3 separate pairwise correlation matrices:
+```{r}
+#standardise
+abscale <- scale(ab[2:8])
+```
+## &nbsp;&nbsp; i. correlation between the 3 size variables (1 mark);
+```{r}
+size <- abscale[,1:3]
+(cor1<-round(cor(size,size), digits=3))
+```
+All have very high positive correlation.  
+  
+## &nbsp;&nbsp; ii. correlation between the 4 weight variables (1 mark);
+```{r}
+weight <- abscale[,4:7]
+(cor2<-round(cor(weight), digits=3))
+```
+All have very high positive correlation.  
+
+## &nbsp;&nbsp; iii. correlation between the 3 size variables and the 4 weight variables (1 mark).
+```{r}
+#(cor3<-round(cor(ab[2:8]), digits=3))
+(cor3<-round(cor(size,weight), digits=3))
+```
+
+Correlation between all are extremely high >0.8 so could be considered measuring the same thing and so not gain anything useful from this. Correlation >0.8 may cause problems.  
+  
+## &nbsp;&nbsp; Do these correlation matrices suggest that canonical correlation would be an appropriate form of analysis and why (2 marks)? (5 marks total)
+Yes, the variables could be divided into 2 groups, weight and size and there is high correlation. 
+  
+## &nbsp;&nbsp;(b) Perform a canonical correlation on this data set for the standardised size (X) and weight (Y) variables. Provide code and relevant output, definitions and interpretations for: (12 marks total)
+## &nbsp;&nbsp;i. canonical correlations (also explain why canonical correlations become successively weaker but do not add up to one) (4 marks);
+## [Note: If you are using knitr and cannot isolate the output for Bartlett’s test please screen shot and add as a figure or recreate the output table in knitr]
+```{r, results="hide"}
+library(yacca)
+pe.cca <- cca(size,weight)
+summary(pe.cca)
+#results="hide"
+```
+Canonical Correlations:
+```{r}
+pe.cca$corr
+```
+```{r}
+pe.cca$corrsq
+```
+
+There are 3 canonical correlation because there are 3 size and 4 weight variables and the canonical correlations will be the smallest number of the number of X and Y variables which is 3. Canonical variate CV1 strong at 94% with a shared variance of 88.5%. CV2 has a sharp drops to 27.7% and shared variance of 7.7%. Maybe just use CV1.
+Why canonical correlations become successively weaker but do not add up to one? lec8 slide 7. Successive pairs based on residual variance.
+  
+## &nbsp;&nbsp;ii. chi-square test of significance and Rao’s F approximation significance test (4 marks);
+Chi-square test of significance
+```{r}
+#not this
+#pe.cca$chisq
+#need to copy/paste from the summary as this doesn't seem to be a variable
+#summary(pe.cca)
+```
+Bartlett's Chi-Squared Test:  
+
+          rho^2      Chisq df    Pr(>X)    
+-- - ---------- ---------- -- --------- ---  
+CV 1 8.8492e-01 4.6836e+03 12 < 2.2e-16 ***  
+CV 2 7.6540e-02 1.8427e+02  6 < 2.2e-16 ***  
+CV 3 8.8827e-03 1.8567e+01  2 9.293e-05 ***  
+
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1  
+  
+Bartlett's test of significance suggests that all 3 canonical correlations are significant (p<0.05).  
+  
+Rao’s F approximation significance test
+```{r}
+F.test.cca(pe.cca)
+```
+CV 1 and CV2 are significant at the 5% level.  
+  
+## &nbsp;&nbsp;iii. redundancy coefficients for the variance in the Y set of variables explained by the variance in the X set (4 marks).
+Redundancy Coefficients (Fraction of Total Variance Explained by Each CV, Across Sets):  
+X|Y
+```{r}
+pe.cca$xvrd
+```
+Redundancy Coefficients (Fraction of Total Variance Explained by Each CV, Across Sets):  
+Y|X
+```{r}
+pe.cca$yvrd
+```
+Aggregate Redundancy Coefficients (Total Variance Explained by All CVs, Across Sets):  
+X|Y
+```{r}
+pe.cca$xrd
+```
+Aggregate Redundancy Coefficients (Total Variance Explained by All CVs, Across Sets):  
+Y|X
+```{r}
+pe.cca$yrd
+```
+Only CV1 has redundancies >10% which suggests to only use CV1. Barletts chi-squared suggests to use 3. Aggregate redundancies suggest again only CV1.  
+  
+## &nbsp;&nbsp;(c) Provide the relevant output and write the equations that describe the first canonical function using your analysis solution from part b) (1 mark). Provide the relevant output and interpret the canonical loadings from part b) (2 marks), and discuss the value of the analysis overall and any cautions in interpretation that should be noted (2 marks). (5 marks total)
+Canonical function CV1:  
+U1 = a1X1 + a2X2  
+V1 = b1Y1 + b2Y2  
+
+## &nbsp;&nbsp;(d) Provide the relevant output (1 mark) from part b) showing the eigen values and interpret (1 mark). Explain the relationship between eigen values and canonical correlations (1 mark). (3 marks total)
+Output  
+Eigenvalues make up the canonical function?  
+  
+## &nbsp;&nbsp;(e) Why is canonical correlation an appropriate technique for this analysis and not multiple regression or MANOVA? (2 marks total)
+Multiple regression can handle only 1 dependent variable. MANOVA can handle multiple multiple independent and dependent variables but the independent must be categorical. In this case size and weight variables do not have to be designated as independent and dependent.  
+  
+## &nbsp;&nbsp;(f) Identify at least 3 limitations associated with canonical correlation analysis? (3 marks total)
+
+* Other techniques have more strict rules on when they can be used and so other techniques can be considered to provide more quality results and interpretation
+* Sensitive to small changes in data
+* ?
+
+# Question 2 (25 marks): Provide R code, output and written interpretation for parts (a) to (d) of this question. Determine if the Age Group of the abalone can be predicted by their size and weight variables by completing the following:
+## &nbsp;&nbsp;(a) Create an Age variable based on: Age=Rings+1.5. Create an Age group variable with 3 categories based on the following: AgeGr ‘1’ = Age <=10; AgeGr ‘2’ = Age > 10 and <14; AgeGr ‘3’ = Age >=14. Convert AgeGr to a factor.
+```{r}
+calculateAge <- function(var1)
+{
+  return(var1 + 1.5)
+}
+calculateAgeGr <- function(var1)
+{
+  if (var1 <= 10){
+    return(1)
+  } else if (var1 > 10 && var1 < 14) {
+    return(2)
+  } else {
+    return(3)
+  }
+}
+abAge <- sapply(ab$Rings,calculateAge)
+abAgeGr <- sapply(ab$Rings,calculateAgeGr)
+ab$Age <- abAge
+ab$AgeGr <- abAgeGr
+ab$AgeGr <- as.factor(ab$AgeGr)
+```
+## Provide the frequency table of number of abalone in each of the three categories. (2 marks total).
+Age group frequency counts:
+```{r}
+table(ab$AgeGr)
+```
+‘1’ = Age <=10  
+‘2’ = Age > 10 and <14  
+‘3’ = Age >=14  
+  
+## &nbsp;&nbsp;(b) Produce (1 mark) and interpret (2 marks) pair-wise scatter plots using the ‘splom’ function (see Week 7) for the size and weight variables, distinguishing between AgeGr using colour. (3 marks total)
+Pair-wise scatter plot for size and weight:
+```{r}
+library(lattice)
+#size 2:5
+#weight 6:8
+splom(ab[,2:8], groups=ab$AgeGr, auto.key=TRUE)
+#splom(ab[1:90,2:8], groups=ab$AgeGr, auto.key=TRUE)
+```
+Pair-wise scatter plot for size:
+```{r}
+splom(size, groups=ab$AgeGr, auto.key=TRUE)
+#splom(ab[1:90,2:5], groups=ab$AgeGr, auto.key=TRUE)
+
+```
+Pair-wise scatter plot for weight:
+```{r}
+splom(weight, groups=ab$AgeGr, auto.key=TRUE)
+#splom(ab[1:90,6:8], groups=ab$AgeGr, auto.key=TRUE)
+```
+Age group 3 seems to group the strongest. Age group 1 and 2 seem to have a much wider variation. There is a lot of data so will do another plot with a subset to check for any more detail of the overlapping areas in the plot.  
+  
+Note pair-wise scatter plots for size and weight from a subset of rows 1 to 90 was performed as per the code comments but seemed to be no more clear and showed similar patterns.  
+  
+## &nbsp;&nbsp;(c) Create training and test sets using AgeGr as a factor (make sure you have converted it to a factor first), with a 70/30 split and a seed value of 1125. Use the table function in R to provide the number of abalone in each Age Group for both the training and the test set that you have constructed. (2 marks total)
+‘1’ = Age <=10  
+‘2’ = Age > 10 and <14  
+‘3’ = Age >=14  
+  
+## Age group frequencies for training data:
+```{r}
+library(caret)
+library(ggplot2)
+set.seed(1125)
+inTrain <- createDataPartition(y = ab$AgeGr,
+                               p = .7,
+                               list = FALSE)
+abtrain <- ab[ inTrain,]
+abtest <- ab[-inTrain,]
+table(abtrain$AgeGr)
+```
+## Age group frequencies for test data:
+```{r}
+table(abtest$AgeGr)
+```
+
+## &nbsp;&nbsp;(d) How would increasing the training/split to 80/20 potentially affect your results? (do not perform this analysis) (1 marks total)
+With more training data this could increase the reliability of the results on the test data, but then create a level of bias as less test data will not have as many tests performed.  
+  
+## &nbsp;&nbsp;(e) Perform a DFA using the training set. Explain why there are only two DFs calculated (1 mark). Provide output, definition, and interpretation (in context of the data and method) for each of the following: (10 marks total)
+```{r}
+#for lda
+library(MASS)
+attach(ab)
+ab.lda <- lda(AgeGr ~ Length + Diameter + Height + Whole + Shucked + Viscera + Shell, 
+              data=abtrain)
+#delete this
+#ab.lda
+```
+  
+2 Degrees of freedom because there are 3 groups and so 3-1=2.  
+  
+## &nbsp;&nbsp;i. the prior probabilities (3 marks)
+Prior probabilities of groups:
+```{r}
+ab.lda$prior
+```
+## &nbsp;&nbsp;ii. the trace values (3 marks)
+```{r, echo=FALSE}
+#not a variable so pasting from the lda call
+#ab.lda$
+```
+Proportion of trace:  
+   LD1    LD2  
+0.9128 0.0872  
+  
+## &nbsp;&nbsp;iii. the weightings/coefficients on LD1 and LD2 (3 marks)
+Coefficients of linear discriminants:
+```{r}
+ab.lda$scaling
+```
+## &nbsp;&nbsp;(f) Based on the DFA, predict Age Group membership for the test set and create and interpret a table showing observed vs predicted category membership for the test set (2 marks). Create an x-y plot of the two DFs grouped by the original Age Group labels and another by the predicted Age Group labels (2 marks). Indicate on the 2nd plot the Age Group 3 abalone that were misclassified as Age Group 1 (1 mark). [Note: Identifying the misclassified points is a visual process (no code) In Word it is easy to circle those points. When using knitr you can either circle the points after the pdf has been created or you can give me your best estimate of the coordinates of those points in the text – i.e. I am just looking for a way to know which ones you have identified]. (5 marks total)
+‘1’ = Age <=10  
+‘2’ = Age > 10 and <14  
+‘3’ = Age >=14  
+```{r}
+agegr.predtest <- predict(ab.lda, abtest) #predict test
+#table of the test data and the predicted test data
+table(abtest$AgeGr, agegr.predtest$class) 
+#table row.names
+```
+Group 1 had 370, group 2 had 35 and group 3 had 36 correctly predicted age groups. The other values showing the incorrectly predicted age groups.  
+## Original group classification
+```{r}
+library(lattice) ## for xyplot
+#lda.temp<-data.frame(group.pred$x, class=mf$Group)
+#xyplot(LD1~LD2, data=lda.temp, groups=class,
+#       auto.key=list(title="Sampled Group", space = "top", cex=1.0))
+# DF1 and DF2 with individuals grouped by original Group classifications 
+#lda.temp<-data.frame(abtrain, class=abtrain$AgeGr)
+#xyplot(LD1~LD2, data=lda.temp, groups=class,
+#       auto.key=list(title="Sampled Group", space = "top", cex=1.0))
+```
+## Predicted group classification
+```{r}
+library(lattice) ## for xyplot
+#lda.temp<-data.frame(group.pred$x, class=group.pred$class) 
+#xyplot(LD1~LD2, data=lda.temp, groups=class,
+#       auto.key=list(title="Predicted Group", space = "top", cex=1.0))
+# DF1 and DF2 with individuals grouped by predicted Group classifications
+lda.temp2<-data.frame(agegr.predtest$x, class=abtest$AgeGr)
+xyplot(LD1~LD2, data=lda.temp2, groups=class,
+       auto.key=list(title="Predicted Group", space = "top", cex=1.0))
+```
+
+## &nbsp;&nbsp;(g) Why might the misclassification rate for the training set be lower than for the test set? (2 marks total)
+```{r}
+agegr.pred <- predict(ab.lda) #predict train 
+#table of the training data and the predicted training data
+table(abtrain$AgeGr, agegr.pred$class)
+#table row.names
+```
+Because the test set is not part of the training data so the training data will naturally give more accurate results.  
+  
+# Question 3 prep code
+```{r}
+#setting seed to make the random sample have consistent results
+set.seed(26785)
+#random sample of 20 from the ab dataframe
+ab_new <- ab[sample(1:nrow(ab), 20, replace=FALSE),]
+table(ab_new$AgeGr)
+```
+```{r}
+str(ab_new)
+```
+```{r}
+#the 20 randomly selected subset
+row.names(ab_new)
+```
+# Question 3 (15 marks): Provide R code, output and written interpretation for parts (a), (b), (d) and (e) of this question. All analysis in this question should be based on the 20 observations in your ‘ab_new’ dataframe.
+## &nbsp;&nbsp;(a) Create a distance matrix for abalone based on the seven size and weight measures. Scale the data and use Euclidian distance. Show only the lower triangle of distances and do not include the diagonal zero’s. Limit all values to 2 decimal places. Label the abalone by Age Group. [Note: If you are using Word, try reducing font size and try Verdana font to make the matrix fit on the page]. (3 marks total)
+```{r, size="tiny"}
+#ab_new size and weight
+options(width = 300)
+ab_new_sw <- subset(ab_new[,2:8])
+(ab_new_sw.scaled <- data.frame(sapply(ab_new_sw, scale)))
+```
+```{r}
+distab1 <- dist(ab_new_sw.scaled, method="euclidian", diag = FALSE, upper = FALSE) 
+attr(distab1, "Labels") <- ab_new$AgeGr
+round(distab1, digits=2)
+#Labels - check this is what is required. SORT first?
+```
+## &nbsp;&nbsp;(b) Create the same distance matrix as in part a) but label the rows and columns by the original abalone row ID number from the ‘ab_new’ dataframe. (3 marks total)
+```{r}
+distab2 <- dist(ab_new_sw.scaled, method="euclidian", diag = FALSE, upper = FALSE) 
+attr(distab2, "Labels") <- rownames(ab_new)
+round(distab2, digits=2)
+```
+## &nbsp;&nbsp;(c) Based on these distance matrices, which abalone is abalone 1980 most dissimilar to (1 mark), and what Age Group do they belong to (1 mark)? [Note: if you do not have abalone 1980 in your ab_new sample please use the 16th student in your list from >row.names(ab_new)]. (2 marks total)
+abalone 1980 is most dissimilar to 1722 by a scaled value of 9.44.  
+abalone 1980 is in the age group 1
+abalone 1722 is in the age group 2
+  
+## &nbsp;&nbsp;(d) Repeat the analysis in part (a) for the size and weight variables separately (i.e. create two distance matrices). Label the rows and columns by the original abalone row ID number from the ‘ab_new’ dataframe (i.e. as in part (b)). (2 marks total)
+Size variables:
+```{r}
+#1:3 size variables
+distab3 <- dist(ab_new_sw.scaled[,1:3], method="euclidian", diag = FALSE, upper = FALSE) 
+attr(distab3, "Labels") <- rownames(ab_new)
+round(distab3, digits=2)
+```
+The abalone most distant from 1980 is still 1722.  
+  
+Weight variables:
+```{r}
+options(width = 300)
+#4:6 weight variables
+distab3 <- dist(ab_new_sw.scaled[,4:6], method="euclidian", diag = FALSE, upper = FALSE) 
+attr(distab3, "Labels") <- rownames(ab_new)
+round(distab3, digits=2)
+```
+The abalone most distant from 1980 is still 1722.  
+  
+## &nbsp;&nbsp;(e) Perform a Mantel’s test between the distance matrices for the size and weight measures (2 marks). State the purpose of the Mantel’s test (2 marks) and interpret the results (1 mark). (5 marks total)
+```{r}
+#why percent and why divide by 100?
+percent <- subset(ab_new[,4:6])
+prop <- percent/100
+# use manhattan to find absolute differences pairwise then
+# divide manhattan by 2 to get equation 5.5 Manly 
+# distman<-dist(prop, method="manhattan", diag = FALSE, upper = TRUE) distgen<-distman/2
+distman <- dist(prop, method="manhattan", diag = FALSE, upper = TRUE) 
+distgen <- distman/2
+round(distgen, digits=2)
+```
+```{r}
+library(ade4)
+#distab1 includes abalone for both size and weight
+mantel.rtest(distab1, distgen, nrepet = 9999)
+```
+
+## Question 4 (25 marks): All analysis in this question should be based on the 20 observations in your ‘ab_new’ dataframe.
+## &nbsp;&nbsp;(a) Based on the scaled size and weight variables perform a cluster analysis using Euclidian distances and Nearest-Neighbour linkage. Plot a dendrogram based on this cluster analysis and label the tips of the dendrogram branches by Age Group (3 marks). Can you identify a good place to cut this tree? Explain your reasoning (3 marks). (6 marks total)
+```{r}
+#i moved this
+library(ade4)
+#could show values first but i initially skipped this
+abdist1 <- dist(scale(ab_new[2:8]), method="euclidean", diag=TRUE, upper=FALSE)
+#delete this
+round(abdist1, digits=2)
+```
+
+```{r}
+#euclidean is default but adding for clarity
+ab_new.hc1 <- hclust(dist(scale(ab_new[2:8]), method="euclidean"), method="single")
+plot(ab_new.hc1, hang=-1, labels=ab_new$AgeGr, xlab="Age group", 
+     sub="Age group clusters for size and weight variables")
+```
+Age group 2 seems to have the least clustered age group spanning across a lot of the clusters. 
+Could potentially cut off at around 1.4 to create 3 clusters or 1.1 and create 4 clusters. Considering the 2nd option this would leave 2 clusters with only 1 abalone in their own groups which would not be ideal. I would then consider more the first option as this would put one into one of the remaining clusters along with what seems to be most in the same age group. Though this cluster being the cluster with all the age group 3 also has some of age group 1 which does not help in selecting the best cluster.
+
+## &nbsp;&nbsp;(b) Four alternative distance measures are listed below. Choose the one you think most appropriate for this data and explain why (2 marks). Provide an explanation for each of the other three (2 marks each) for why they are not appropriate (or are less appropriate) for this data. (8 marks total)
+## &nbsp;&nbsp;• Minkowski (euclidean is a version of the minkowski)
+## &nbsp;&nbsp;• Binary
+## &nbsp;&nbsp;• Manhattan (manhattan is a version of the minkowski)
+## &nbsp;&nbsp;• Maximum (or minimax)
+Binary would not be appropriate as we could not get a 2 result success/failure 0 or 1 from comparing 20 abalone and it's variables. This could be possible if comparing eg. age group 1 to age group 2.
+Maximum/minimax could be interesting to look into as the other tests are using distances from all variables this test uses the maximum distance among the observed variables. This could be of interest to perform and cross check assumptions about how much input the other variables contribute or if one single maximum can group them better.  
+Manhatton not good with negative but we have here all strong positive. "Euclidean and Manhattan are both versions of the more general Minkowski metric so would gain not much more insight than the previously completed euclidean.
+```{r, echo=FALSE}
+#ab_new.hc <- hclust(dist(scale(ab_new[2:8]), method="minkowski"), method="single")
+#plot(ab_new.hc, hang=-1, labels=ab_new$AgeGr, xlab="Age group", 
+#     sub="Age group clusters for size and weight variables")
+```
+```{r, echo=FALSE}
+#binary not applicable
+#ab_new.hc <- hclust(dist(scale(ab_new[2:8]), method="binary"), method="single")
+#plot(ab_new.hc, hang=-1, labels=ab_new$AgeGr, xlab="Age group", 
+#     sub="Age group clusters for size and weight variables")
+```
+```{r, echo=FALSE}
+#ab_new.hc <- hclust(dist(scale(ab_new[2:8]), method="manhattan"), method="single")
+#plot(ab_new.hc, hang=-1, labels=ab_new$AgeGr, xlab="Age group", 
+#     sub="Age group clusters for size and weight variables")
+```
+```{r, echo=FALSE}
+#ab_new.hc <- hclust(dist(scale(ab_new[2:8]), method="maximum"), method="single")
+#plot(ab_new.hc, hang=-1, labels=ab_new$AgeGr, xlab="Age group", 
+#     sub="Age group clusters for size and weight variables")
+```
+## &nbsp;&nbsp;(c) Using your chosen distance measure from part b) repeat the cluster analysis and provide the dendrogram (1 mark). Has this improved the usefulness of the dendrogram (1 mark)? Explain (3 marks). (5 marks total)
+```{r}
+ab_new.hc2 <- hclust(dist(scale(ab_new[2:8]), method="maximum"), method="single")
+plot(ab_new.hc2, hang=-1, labels=ab_new$AgeGr, xlab="Age group", 
+     sub="Age group clusters for size and weight variables")
+```
+Here I could consider cutoff at 1 and this would clearly show a great difference between 2 clusters, but this would leave us with 1 cluster of 1 and 1 remaining large cluster with a mix of age group 1, 2 and 3 so not ideal. I would then consider a cutoff at around 0.8 leaving us with 4 clusters, with 1 cluster to the right containing mostly age group 1. However age group 1 then seems to be one of the other clusters along with age group 2 and 3 so age group 1 seems to vary a lot in distances. This would also then leave us with 2 clusters containing only 1 abalone.  
+  
+Maximum/minimax although is different does not seem to have improved the clustering if we define improve as in putting age groups clearly into their own clusters.  
+  
+## &nbsp;&nbsp;(d) Repeat the analysis in part a) for the size measures only. Repeat again for the weight measures only. Provide only the dendrograms in your solution (not code or distance matrices) (2 marks). Comment on their usefulness, including clustering of Age Groups and branch lengths (4 marks). (6 marks total)
+
+## Size:
+```{r, echo=FALSE}
+#size 2:4
+ab_new.hc3 <- hclust(dist(scale(ab_new[2:4]), method="euclidean"), method="single")
+plot(ab_new.hc3, hang=-1, labels=ab_new$AgeGr, xlab="Age group", 
+     sub="Age group clusters for size and weight variables")
+```
+Using just the size measures shows 2 big clusters at the first join, though the length between the cluster on the right and the single abaolone in the middle in age group 2 being too short of a distance to consider them to be clearly different clusters. Cutting around around a height of 1 would then create 3 groups. This leaves us with similar results as previously.  
+  
+## Weight:
+```{r, echo=FALSE}
+#weight 5:8
+ab_new.hc4 <- hclust(dist(scale(ab_new[5:8]), method="euclidean"), method="single")
+plot(ab_new.hc4, hang=-1, labels=ab_new$AgeGr, xlab="Age group", 
+     sub="Age group clusters for size and weight variables")
+```
+Using just the weight measurement create 2 clusters, though with 1 being in their own group and the rest in 1 large group. This seems to be the least reliable clustering results for grouping. Each of the joining points below this has lengths that are too close to each other to consider any cut points.  
+  
+## Question 5 (5 marks) Write 100 to 300 words explaining, in context, whether any of these forms of analysis have helped your understanding of the data. Be specific about what the different forms of analysis have shown you, but do not restate results.
+Many of the tests showed age group 1 being the most varied in measurements, including the scatter plots and the dendrograms.  
+  
+Dendrogram shows age group 1 distance measures having the biggest variation and less able to group. Age group 3 was the most reliable in grouping clusters with short distance measures between them. This would seem that trying to create 3 distinct clear clusters with the current age range settings to not be easy to identify age based on those measures. Further investigation could be considered for 2 age groups or varying the age range in each group.

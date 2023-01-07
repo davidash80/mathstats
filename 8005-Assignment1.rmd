@@ -1,0 +1,422 @@
+---
+title: "Assignment 1 - David Ash"
+output:
+  pdf_document:
+    toc: no
+  html_document:
+    toc: no
+---
+
+```{r}
+#clear variables; ls lists vars in environment
+rm(list = ls())
+#read in data to countries variable
+countries <- read.table("countries.dat", header=TRUE)
+head(countries)
+```
+## Question 1
+## &nbsp;&nbsp; a) Describe the structure of the ‘countries.dat’ data. (1 mark total)
+```{r}
+#structure
+str(countries)
+```
+ANSWER:  
+multivariate data  
+30 objects, 7 variables  
+1 categorical; 6 quantitative  
+no missing data  
+  
+## &nbsp;&nbsp; b) Produce (2 marks) and interpret (2 marks) univariate QQ plots and histograms and univariate Shapiro-Wilks tests of normality for each of the six population health variables. Which are the most non-normally distributed variables (1 mark)? (5 marks total)
+```{r, results="hide"}
+library(MVN)
+```
+```{r}
+healthvars <- countries[2:7]
+#quantile-quantile plot
+mvn1 <- mvn(healthvars, univariateTest="SW", univariatePlot="qqplot")
+```
+```{r}
+mvn2 <- mvn(healthvars,univariatePlot="histogram")
+```
+```{r}
+mvn1$univariateNormality
+```
+ANSWER:  
+Small dataset so need to be cautious about interpretation of being normal. No perfect but several of the variables are somewhat at a 45 degree positive linear angle which would be needed for univariate normal. Irrigated and population have potential outliers and are sparse in the higher values or right skewed. Under 14 and literacy rate shows potential grouping but again could be due to small dataset. Life expectancy is more closely aligned to the 45deg on the qq plot and more of what we would expect from a normal distribution.  
+  
+Shapiro-Wilks test indicates not univariate normally distributed for all variables.  But even if not univariate normal, does not mean it is not multivariate normal.  
+  
+The most non-normally distributed from histogram are population and irrigated which are quite strongly right skewed with large values for standard deviation and kurtosis. As noted this could be due to outliers. Life expectancy showing more visually closer to a normal curve than others however. Not a good bell shape and skewed left but also not a large dataset.  
+  
+## &nbsp;&nbsp; c) Produce(1mark) and interpret(1mark) perspective and contour plots for the Under.14 and Life.expectancy variables. What is an inherent problem with using these plots to assess MVN (1 mark)? (3 marks total)
+```{r}
+sub1=countries[4:5]
+mvn2 <- mvn(sub1, multivariatePlot="persp", desc=FALSE)
+```
+```{r}
+mvn3 <- mvn(sub1, multivariatePlot="contour", desc=FALSE)
+```
+  
+ANSWER:  
+Small dataset can limit the amount we can interpret and make use of these plots to come to a conclusion for mvn. These plots also look heavily skewed so could consider transfomation to help come to a better conclusion for mvn.  
+  
+The perspective and contour plots do not look like a multivariate normal distribution or indicate mvn or bivariate normal. Inherent problem with using these plots to test for MVN are they do not test for outliers.  
+    
+## &nbsp;&nbsp; d) Perform the analysis necessary to provide the results of the Mardia, Henze-Zirkler and Royston tests of MVN based on all six population health variables. Include in your interpretation: (8 marks total)
+## &nbsp;&nbsp; i. The Chi-Square QQ plot (1 mark) and interpretation (1 mark)
+```{r}
+par(mfrow = c(1,1))
+sub2=countries[2:7]
+#for plot just need 1 as each are the same
+mvn3 <- mvn(sub2, mvnTest="mardia", desc=TRUE, multivariatePlot="qq")
+```
+  
+ANSWER:  
+2 outliers and almost linear.  2 ouliers show 2 being significantly different values to what is expected, with the others on the linear line being more closely to what is expected.  
+  
+## &nbsp;&nbsp; ii. Describe how the QQ plot is constructed and its relationship to the univariate normal QQ plots (2 marks).
+ANSWER:  
+Univariate QQ plots show individual variable conformity to individually univariate normal distribution. The chi-squared QQ plot shows conformity to MVN. Chi-squared QQ plots are constructed using Mahalanobis distances of observations from the cenroid of multivariate population.  
+  
+## &nbsp;&nbsp; iii. Output and interpretation for the 3 tests (3 marks).
+```{r}
+mvn4 <- mvn(sub2, mvnTest="mardia", desc=FALSE)
+mvn4$multivariateNormality
+```
+```{r}
+mvn5 <- mvn(sub2, mvnTest="hz", desc=FALSE)
+mvn5$multivariateNormality
+```
+```{r}
+mvn6 <- mvn(sub2, mvnTest="royston", desc=FALSE)
+mvn6$multivariateNormality
+```
+ANSWER:  
+The chi-squared qq-plot suggest a possible MVN with 2 outliers and positive linear 45% angle. However all 3 mvn tests indicate not MVN and based purely on the test results H0 is rejected. As noted the small sample size could be misleading however Mardia test incorporates sample size into it's calculation which gives further concern for MVN in this case.  
+  
+## &nbsp;&nbsp; iv. What is a key limitation of these MVN statistical tests (1 mark)?
+ANSWER:  
+Mahalanobis distances are sensitive to outliers.  These tests indicate difference between at least 2 groups but unsure which so need further testing.  
+  
+## &nbsp;&nbsp; e) One way to try and meet the MVN assumption could be to remove some of the variables from the multivariate analysis. Which two variables would you choose to remove to see if that helped meet the MVN assumption (do not perform this analysis) (1 mark)? Suggest three additional ways that you might improve univariate and multivariate normality for data sets in general (3 marks). (4 marks total)
+ANSWER:  
+Based on the multivariate p values the lowest is irrigation and population so they could be considered as variables to remove (not considering other factors). 
+  
+Suggestions for additional ways to improve univariate and multivariate normality:  
+
+* larger dataset
+* investigate and if appropriate remove outliers
+* transform variables for cases of left or right skew, eg. sqr, sqrt, log
+
+## &nbsp;&nbsp; f) In part e) we suggested removing some variables to try and help the data approach MVN. Suggest one other reason why reducing the number of variables used in multivariate analysis may be important (this question does not necessarily relate specifically to this particular data set)? (2 marks total)
+ANSWER:  
+If any of the variables are not univariate normal even after considering outliers and modifying skewed data would be reason to consider removing some variables. Reducing in this case could help to meet MVN.  
+  
+## &nbsp;&nbsp; g) If we were to use some form of transformation on the population health variables to make them meet univariate normality, would this ensure multivariate normality? Briefly discuss (max 50 words). (2 marks total)
+  
+Univariate is suggested to help improve the possibility of MVN. However even if all univariate variables were univariate normal this does not guarantee MVN.  
+  
+## Question 2 (20 marks): For all of Question 2, use only the population health variables: Under.14, Life.expectancy, Literacy.Rate and Unemployment. For the purposes of this assignment, assume that the MVN assumption has been met. Provide R code, output and written interpretation for parts b) and d) of this question.
+```{r}
+sub3 <- countries[,c("Region","Under.14","Life.expectancy","Literacy.Rate","Unemployment")]
+```
+## &nbsp;&nbsp; a) Is the data balanced or unbalanced across the 4 regions? Discuss including a frequency table from R showing the sample sizes in each Region. (2 marks total)
+```{r}
+Regions=c("Africa","Asia","Europe","South.America")
+subreg1 <- sub3[sub3$Region == "Africa",]
+subreg2 <- sub3[sub3$Region == "Asia",]
+subreg3 <- sub3[sub3$Region == "Europe",]
+subreg4 <- sub3[sub3$Region == "South.America",]
+Sample.Size=c(nrow(subreg1),nrow(subreg2),nrow(subreg3),nrow(subreg4))
+subcountreg=cbind(Regions,Sample.Size)
+df=data.frame(subcountreg)
+df
+```
+ANSWER:  
+Sample size across regions is not balanced. This could have issues with comparing regions, though some tests like t tests can take differences in sample size into consideration.  
+  
+## &nbsp;&nbsp; b) Produce a draftsman display for the 4 population health variables. Use the function scatterplotMatrix (from week 2) and check the help documentation (?scatterplotMatrix) to help you produce a plot with observations grouped by regional group using different colours, making sure that you include the associated legend. Your plot should not include smoothing, regression lines, or distribution curves in the diagonal panels of the plot (1 mark). Interpret these plots, relating back to the original data where it may add to the interpretation (2 marks). What are the y and x axes on plot [3,2] of the scatterplotMatrix (1 mark)? (4 marks total) Hint: to move the legend in scatterplotMatrix try something like: legend=list(coords="bottomleft").
+```{r, results="hide", }
+library(car)
+```
+```{r, results="hide", echo=FALSE}
+#scatterplotMatrix(sub3[2:5])
+```
+```{r}
+attach(sub3)
+scatterplotMatrix(~ Under.14 + Life.expectancy + Literacy.Rate + Unemployment | Region, 
+                  data=countries, diagonal=FALSE,  regLine=FALSE, smooth=FALSE, 
+                  cex.labels=1.3, cex=0.8, legend=list(coords="bottomleft"))
+```
+  
+ANSWER:  
+y and x axis of the plot at [3,2] show the linear relationship between Life.expectancy on the x and Literacy.Rate on the y.  
+  
+This seems to have a lot of scatter and possible grouping. Possible negative linear between under 14 and life expectancy, and unemployment and life expectancy.  
+  
+## &nbsp;&nbsp; c) In the context of MANOVA,list the dependent and independent variables (1mark) and define the relationship that the MANOVA would test (1 mark). (2 marks total)
+ANSWER:  
+Independent - Region  
+Dependent - Unemployment, Life.Expectancy, under.14 and literacy rate  
+Manova would test the means of the 4 dependent variables between the regional groups. In the hypothesis test, testing for differences between the means values and variation.  
+  
+## &nbsp;&nbsp; d) Using MANOVA in R, test for differences in ‘population health’ between the four country regions. Include tests using all four test statistics covered in this course (2 marks) and interpret output (3 marks). (5 marks total)
+```{r}
+#countries 4 health vars as matrix
+cmatrix <- cbind(sub3$Under.14,sub3$Life.expectancy,sub3$Literacy.Rate,sub3$Unemployment)
+c.manova1 <- manova(cmatrix ~ Region, data=sub3)
+summary(c.manova1) #default test is Pillai's
+```
+  
+ANSWER:  
+Pillai's trace is 1.2357 which is significantly large indicating differences between regional groups.
+  
+```{r}
+summary(c.manova1, test="Wilks")
+```
+  
+ANSWER:  
+Definition: Wilks Lambda compares within to the within+between |W|/|T|  
+Wilks Lambda is 0.13876 which is small and so indicates significant difference between groups.  
+  
+```{r}
+summary(c.manova1, test="Roy")
+```
+  
+ANSWER:  
+Definition: Roy's largest root finds linear combinations of variables to maximise between to within W^(-1)B
+Roy's largest root is 3.0723 which is significantly large indicating differences between Regional groups. 
+  
+For all, degrees of freedom is 3, we have 4 regional groups and 4-1=3; The F statistic variation between divided by variation within. For each of the above tests we got ~4.4, 5.7, 19.2 and so all being relatively large this does indicate variation between regional groups. 
+  
+```{r}
+summary(c.manova1, test="Hotelling-Lawley")
+```
+  
+ANSWER:  
+Definition: Hotelling-lawley trace is sum of the eigenvalues.  
+Hotelling-lawley trace is 3.7599 which is large indicating difference between regional groups.  
+  
+## &nbsp;&nbsp; e) Which of the four tests used in part c) would be the best to interpret if there are concerns about multivariate normality or covariance equality? (1 mark total)
+ANSWER:  
+Pillai’s trace  
+  
+## &nbsp;&nbsp; f) Produce output that specifically compares each of the Regions with each other (you should have 6 comparisons) using Hotelling’s T2 test and a significance level of 0.05 (2 marks). Determine the multiple test corrected significance level (1 mark). Do not provide R output; instead reproduce and complete the following table for all comparisons and interpret. How may sample sizes have affected these results and those in part d) (2 marks)? Will deviation from MVN influence these results (1 mark)? (6 marks total)
+```{r, results="hide"}
+c.manova2 <- manova(cmatrix ~ Region, data=countries, subset=Region%in% c("Africa", "Asia"))
+summary(c.manova2, test="Hotelling-Lawley")
+c.manova3 <- manova(cmatrix ~ Region, data=countries, subset=Region%in% c("Africa", "Europe"))
+summary(c.manova3, test="Hotelling-Lawley")
+c.manova4 <- manova(cmatrix ~ Region, data=countries, subset=Region%in% c("Africa", "South.America"))
+summary(c.manova4, test="Hotelling-Lawley")
+c.manova5 <- manova(cmatrix ~ Region, data=countries, subset=Region%in% c("Asia", "Europe"))
+summary(c.manova5, test="Hotelling-Lawley")
+c.manova6 <- manova(cmatrix ~ Region, data=countries, subset=Region%in% c("Asia", "South.America"))
+summary(c.manova6, test="Hotelling-Lawley")
+c.manova7 <- manova(cmatrix ~ Region, data=countries, subset=Region%in% c("Europe", "South.America"))
+summary(c.manova7, test="Hotelling-Lawley")
+```
+ANSWER:  
+  
+Applying a Bonferroni correction. Significant < 0.05 p probability and apply alpha=0.05/6 = 0.00833 for number of tests  
+  
+Region 1     Region 2       Hotelling's p-value  Significant (Y/N)    Significant after correction (Y/N)  
+----------   -------------  -----------          ------------         -------------------  
+Africa       Asia           0.02113              Yes                  No  
+Africa       Europe         2.964e-07            Yes                  Yes  
+Africa       South.America  0.0166               Yes                  No 
+Asia         Europe         0.0172               Yes                  No 
+Asia         South.America  0.5287               No                   No 
+Europe       South.America  0.003354             Yes                  Yes 
+  
+Sample size varying between these tests are fairly robust. However with 1 region South.America having a sample of 4<5 this may not be the case.  
+  
+## Question 3 (30 marks): For all of question 3, use only the population health variables: Under.14, Life.expectancy, Literacy.Rate and Unemployment. For the purposes of this assignment, assume that the MVN assumption has been met. Provide R code, output and written interpretation for parts a) to e) of this question.
+```{r}
+#just the health vars without the regions
+sub3h <- sub3[2:5]
+```
+## &nbsp;&nbsp; a) Produce (2 marks) and interpret (2 marks) the correlation and covariance matrices. Explain the difference between these matrices in detail (i.e. explain clearly how the values are adjusted mathematically and the effect of these changes) (2 marks). Would using the covariance matrix in PCA on this data be appropriate (1 mark)? Why (1 mark)? (8 marks total)
+```{r}
+#correlation matrix
+(cor1<-round(cor(sub3h), digits=3))
+```
+  
+ANSWER:  
+The covariance matrix compares the variance between pairs with the numbers being standardised and easier to compare on the same scale. Values are showing quite high for both positive and negative correlation, apart from 1 being -0.333.  
+  
+```{r}
+#covariance matrix
+(cov1<-round(cov(sub3h), digits=3))
+```
+  
+ANSWER:  
+Covariance matrix having numbers which can be more handy in some cases with the magnitude of values having in some cases some extra meaning.  
+  
+## &nbsp;&nbsp; b) Perform PCA analysis on the 4 population health variables using the prcomp function. Provide the eigenvalues (1 mark), %variation (1 mark) and scree plot (1 mark). Interpret each of these results (3 marks) and discuss how they influence your Page 4 of 6 decision on how many PCs to interpret from this analysis (2 marks). Remember to keep in mind the overall purpose of PCA (8 marks total).
+```{r}
+#prcomp - Principal Components Analysis
+(sub3h.prcomp <- prcomp(sub3h, center=TRUE, scale=TRUE ))
+```
+```{r}
+#eigen values
+sub3h.prcomp$sdev^2
+```
+ANSWER:  
+General rule of using PC with Eigenvalues greater than 1, which leaves us only with PC1 but will check further as just one PC may not be sufficient.  
+  
+```{r}
+## percent %variance
+(pervar<-((sub3h.prcomp$sdev^2/sum(sub3h.prcomp$sdev^2))*100))
+#cleanup digits
+(pervar<-round(pervar,digits=1))
+```
+  
+ANSWER:  
+Principle component 1 (PC1) is accounting for 76.6% of the variance from the original 4 variables. PC1 + PC2 is accounting for 94.3%, which is a fairly decent amount so maybe good to consider using 2. With the remaining PC3 and PC4 only accounting for a very small variance I would then consider to only making use of PC1 and PC2.  
+  
+```{r}
+#plot the variances against the number of the principal component
+screeplot(sub3h.prcomp, type="lines") 
+```
+  
+ANSWER:  
+From the screeplot this shows a sharp elbow at 2 indicating much less contribution of PC2 and subsequent principle components.  
+  
+## &nbsp;&nbsp; c) Interpret (2marks) the first PC. Include the Z equation (1mark) and a plot of the loadings on the first PC in your answer (1 mark). (4 marks total)
+```{r}
+load = sub3h.prcomp$rotation
+pc1 = load[order(load[,1]),1]
+dotchart(pc1,main="Loadings Plot for PC1",xlab="Variable Loadings",cex=1,col="red")
+```
+  
+ANSWER:  
+For PC1 Life expectancy and literacy rate are moderately positively correlated while unemployment and under 13 are moderately negatively correlated. 
+Z1 = -0.54(Under.14) + 0.55(Life.expectancy) + 0.45(Literacy.Rate) -0.46(Unemployment)  
+  
+PC1 could potentially be a measure of health and skilled workers with more data and investigation but may require more specialist knowledge.  
+    
+## &nbsp;&nbsp; d) What is the correlation between the first and second PCs and what does this tell you? (2 marks total)
+ANSWER:  
+PC1 is accounting for 76.6% of the variance from the original 4 variables.  
+PC2 is accounting for 17.7% of the variance from the original 4 variables.  
+PC1 variables are all moderate. PC2 has 2 strong correlations and 2 weak.  
+  
+## &nbsp;&nbsp; e) Produce (1 mark) and interpret (2 marks) a biplot based on the first 2 PCs. In particular, explain your interpretation of the population health variables in Kenya compared to Hong Kong (1 mark). Relate your interpretation back to the original data (1 mark). (5 marks total)
+```{r}
+biplot(sub3h.prcomp,choices=c(1,2), cex=c(0.7,0.7))
+```
+  
+ANSWER:  
+On PC1 countries higher in life expectancy like Hong Kong are in contrast to those high in unemployment like Kenya. On PC2 the same could be said but not as strongly.  
+  
+The original data seems to back this up with Hong Kong having 4.5% unemployment compared to 50% in Kenya, and Life expectancy in Hong Kong being 79.7 compared to 47.5 in Kenya.  
+Hong.Kong               Asia        20       7.20    17.70           79.70          92.2          4.5  
+Kenya                 Africa       660      30.80    42.00           47.50          78.1         50.0  
+  
+## &nbsp;&nbsp; f) Was this a useful analysis for this data set? Explain with specific reference to the results of your prior analysis in this question. (3 marks total)
+ANSWER:  
+Yes as it seems to show more correlation possibilities. Previous tests showed several times MVN to be suspect.  
+  
+## Question 4 (25 marks):  For all of question 4, use only the population health variables: Under.14, Life.expectancy, Literacy.Rate and Unemployment. For the purposes of this assignment, assume that the MVN assumption has been met.  Provide R code, output and written interpretation for parts a), b) and d) of this question.
+## &nbsp;&nbsp; a) Perform a Factor Analysis using the factanal function. Initially try using 2 components and apply no rotation. You will get an error message. In order to problem solve this issue and make further decisions about your analysis you will need to have read the additional notes available in the Week 6 block on the Studydesk called “notes on df limiting number of factors.pdf”. Provide your initial line of code, subsequent error message and your final line of code that successfully performs the factanal analysis (2 marks). What did you need to change and why (2 marks)? (4 marks total)
+  
+$ factanal(sub3h, factors=2, rotation="none" )  
+Error in factanal(sub3h, factors = 2, rotation = "none") : 2 factors are too many for 4 variables
+```{r}
+#number of original variables
+n=4
+#number of factors
+nf=3
+#degrees of freedom
+(dof = n * (n-1)/2 - n * nf + nf*(nf-1)/2)
+```
+```{r}
+nf=2
+(dof = n * (n-1)/2 - n * nf + nf*(nf-1)/2)
+```
+```{r}
+nf=1
+(dof = n * (n-1)/2 - n * nf + nf*(nf-1)/2)
+```
+ANSWER:  
+Cannot use negative degrees of freedom, so need to change factors to 1.  This is due to the degrees of freedom being related to the chi-square goodness of fitness test. It's possible to run the factor analysis test with 2 however cannot run the goodness of fitness test.  
+```{r}
+(c.fa <- factanal(sub3h, factors=1, rotation="none" ))
+```
+The test that 1 factor is sufficient as a p value of < 0.05 so this is rejected.  
+  
+## &nbsp;&nbsp; b) From your successful factanal analysis in part a) provide output and interpretation for (8 marks total):
+## &nbsp;&nbsp; Variance explained (2 marks)
+Uniquenesses:  
+       Under.14 Life.expectancy   Literacy.Rate    Unemployment  
+          0.247           0.005           0.578           0.316  
+  
+
+
+## &nbsp;&nbsp; Chi-square test (2 marks)
+```{r}
+c.fa$STATISTIC
+```
+Test of the hypothesis that 1 factor is sufficient.  
+The chi square statistic is 15.7 on 2 degrees of freedom.  
+The p-value is 0.000389  
+  
+The probability here being < 0.05 and the model is significantly different from our data so 1 factor is not sufficient.  
+
+## &nbsp;&nbsp; Variable loadings (2 marks)
+```{r}
+print(c.fa$loadings, cutoff=0.5)
+```
+None are below 0.5 so all the variables for factor 1 are positively or negatively explaining the variation. Where countries with high values of under 14 population percentage and unemployment having low values of life expectancy and literacy rate.  
+  
+## &nbsp;&nbsp; Difference in uniqueness values for the variables Life.expectancy and Literacy.Rate (2 marks)
+```{r}
+c.fa$uniquenesses
+```
+
+## &nbsp;&nbsp; c) How would your results change if you applied a rotation? Explain your reasoning. (4 marks total)
+ANSWER:  
+A rotation would exaggerate larger loadings and minimise smaller loadings to make interpretation of variations simpler.  
+  
+## &nbsp;&nbsp; d) Perform parallel analysis using a seed value of 245 and 500 iterations. Produce the scree plot for the PC results only (1 mark). Discuss how many PC’s are recommended by this analysis and use the plot to help you explain these results (2 marks). As part of your explanation provide the values for the 95th percentile for components 1 and 2 (1 mark). (4 marks total)
+```{r, results="hide"}
+library(psych)
+```
+```{r}
+set.seed(245)
+pa <- fa.parallel(sub3h, fm="ml", fa="pc", n.iter=500)
+set.seed(245)
+pa <- fa.parallel(sub3h, fm="ml", fa="pc", n.iter=500, error.bars=TRUE)
+#consolle output:
+#Parallel analysis suggests that the number of factors =  NA  and the number of components =  1
+```
+
+```{r}
+#real data eigenvalues
+pa$pc.values
+```
+values for the 95th percentile for components 1 and 2 are 3.06517261 and 0.70728331 with PC2 being below what is expected and explain why it's only suggesting 1 component.  
+  
+#consolle output:
+#Parallel analysis suggests that the number of factors =  NA  and the number of components =  1
+  
+```{r}
+#simulated eigenvalues
+pa$pc.sim
+```
+3.065 > 1.424 suggesting we can use the 1st component  
+0.707 < 1.105 suggesting we do not use the 2nd component  
+However this would then drastically reduce the percentage of variation explained so this might not be ideal.  
+```{r}
+pa.out <- pa$values
+tail(pa.out)
+#apply quantile function to parallel factor analysis variable pa$values using the simulated columns
+apply( pa.out[,5:8], 2, quantile, probs = c(0.95) )
+```
+
+## &nbsp;&nbsp; e) Explain in your own words how the parallel analysis works. (5 marks total)
+ANSWER:  
+Parallel analysis is used to help in deciding on the number of components to use. It does this by setting up a  normally distributed set of random data based on the properties of the real data including the same sample size and number of variables and by repeating tests a number of times produces eigenvalues which can then be compared with the real data eigenvalues to see if we have confidence in chosen components.  
+  
+Seed used here is for consistent number results for this assessment, or can be used to make results reproducible. If we wanted to run this again to see if we get different results we would not keep using the same seed.
